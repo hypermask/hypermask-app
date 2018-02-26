@@ -72,6 +72,10 @@ body.dashboard {
 	background: radial-gradient(773.46px at 17.43% 24.02%, #9B51E0 0%, #BB6BD9 100%);
 	margin-bottom: 100px;
 	
+	&.testnet {
+		background: radial-gradient(773.46px at 17.43% 24.02%, #ff8100 0%, #BB6BD9 100%);
+	}
+
 	.header {
 		text-align: center;
 		color: white;
@@ -176,7 +180,9 @@ pre {
 		display: flex;
 		align-items: center;
 	}
-
+	.header.testnet {
+		background: radial-gradient(267.65px at 18.56% 31.18%,#ff8100 0,#bb6bd9 100%);
+	}
 
 	.footer {
 		padding: 20px 30px;
