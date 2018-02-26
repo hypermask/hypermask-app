@@ -13,3 +13,16 @@ HyperMask lets users without MetaMask installed still participate in the decentr
 ## HyperMask App
 
 This repository contains the source code of HyperMask's frame. This is the iframe hosted on hypermask.io that maintains a user's wallet. 
+
+If you're just interested in building apps with HyperMask, look at the [examples repository](https://github.com/hypermask/hypermask-examples) instead.
+
+
+## Donate
+
+We're committed to the security of our users and developers. Users are in full control of their own wallets. This means that we can't tack on additional transaction fees and have to depend on donations. 
+
+Because of our dedication to security, no less than 10% of donations will go toward starting a bug bounty program. The rest of the funds will be used to support the ongoing development of HyperMask.
+
+```
+ETH: 0x658AC8Dab114EE16Fba37f3c18Ad734a3542bF63
+```
