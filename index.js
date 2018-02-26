@@ -1,4 +1,6 @@
 import 'babel-polyfill'
+
+import _ from 'lodash'
 import React from 'react'
 import ReactDOM from 'react-dom'
 
@@ -13,6 +15,7 @@ import Web3 from 'web3'
 import queryString from 'query-string';
 
 import { CSSTransitionGroup } from 'react-transition-group'
+import abiDecoder from 'abi-decoder'
 
 import "./style.scss";
 
@@ -23,24 +26,28 @@ const CHAINS = [
         slug: 'mainnet',
         id: '1',
         explore: 'https://etherscan.io/address/',
+        token_explore: 'https://etherscan.io/token/',
         rpc: "https://mainnet.infura.io/Dpsk5u62HN582LMDXeFr"
     }, {
         name: 'Ropsten Test Network',
         slug: 'ropsten',
         id: '3',
         explore: 'https://ropsten.etherscan.io/address/',
+        token_explore: 'https://ropsten.etherscan.io/token/',
         rpc: "https://ropsten.infura.io/Dpsk5u62HN582LMDXeFr",
     }, {
         name: 'Rinkeby Test Network',
         slug: 'rinkeby',
         id: '4',
         explore: 'https://rinkeby.etherscan.io/address/',
+        token_explore: 'https://rinkeby.etherscan.io/token/',
         rpc: "https://rinkeby.infura.io/Dpsk5u62HN582LMDXeFr",
     }, {
         name: 'Kovan Test Network',
         slug: 'kovan',
         id: '42',
         explore: 'https://kovan.etherscan.io/address/',
+        token_explore: 'https://kovan.etherscan.io/token/',
         rpc: "https://kovan.infura.io/Dpsk5u62HN582LMDXeFr",
     }, {
         name: 'INFURAnet Test Network',
@@ -51,7 +58,13 @@ const CHAINS = [
     }
 ]
 
+const ERC20ABI = [{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"type":"function"},{"constant":true,"inputs":[],"name":"version","outputs":[{"name":"","type":"string"}],"type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"type":"function"},{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"},{"name":"_extraData","type":"bytes"}],"name":"approveAndCall","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"},{"name":"_spender","type":"address"}],"name":"allowance","outputs":[{"name":"remaining","type":"uint256"}],"type":"function"},{"inputs":[{"name":"_initialAmount","type":"uint256"},{"name":"_tokenName","type":"string"},{"name":"_decimalUnits","type":"uint8"},{"name":"_tokenSymbol","type":"string"}],"type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_from","type":"address"},{"indexed":true,"name":"_to","type":"address"},{"indexed":false,"name":"_value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_owner","type":"address"},{"indexed":true,"name":"_spender","type":"address"},{"indexed":false,"name":"_value","type":"uint256"}],"name":"Approval","type":"event"}]
+abiDecoder.addABI(ERC20ABI)
+
 function explore(address){
+    if(app.state && app.state.to == address && app.state.isERC20 == true && chain.token_explore){
+        return chain.token_explore + address + '?a=' + app.state.myAddress
+    }
     return chain.explore + address
 }
 
@@ -364,7 +377,8 @@ const rpcMethods = {
     }, 'eth_sign'),
     eth_signTypedData: interactive(async function(message, from, extraParams){
         await interactiveSignatureRequest.call(this, 
-            JSON.stringify(message, null, '  '))
+            message.map(k => k.name + ': ' + JSON.stringify(k.value, null, '  ')).join('\n'))
+            // JSON.stringify(message, null, '  '))
         const serialized = sigUtil.signTypedData(await getPrivateKey(from), 
             { ...extraParams, from: from, data: message })
         return serialized
@@ -372,21 +386,82 @@ const rpcMethods = {
     eth_sendTransaction: interactive(async function(txParams){        
         this.setState({  page: 'widget',  screen: 'loading' })
 
+        console.assert((await getWallet()).getAddressString() === txParams.from.toLowerCase(),
+            "'from' field for transaction must be current address.")
+
         let _currentBalance = web3.eth.getBalance(txParams.from, 'pending');
         let _ethUSDPrice = getEthereumPrice();
 
         txParams = await fixTx(txParams);
-        let priceEstimate = web3.utils.toBN(txParams.value).add(
-            web3.utils.toBN(txParams.gasPrice).mul(
-                web3.utils.toBN(txParams.gas)
+        let priceEstimate = BN(txParams.value).add(
+            BN(txParams.gasPrice).mul(
+                BN(txParams.gas)
             )
         )
         let ethAmount = web3.utils.fromWei(priceEstimate, 'ether');
         let currentBalance = await _currentBalance;
-        let sufficientLeftovers = priceEstimate.lt(web3.utils.toBN(currentBalance));
+        let sufficientLeftovers = priceEstimate.lt(BN(currentBalance));
 
         let ethUSDPrice = await _ethUSDPrice;
         this.setState({ ethUSDPrice: ethUSDPrice })
+
+        let contractCode = await web3.eth.getCode(txParams.to);
+        
+        // 18160ddd -> totalSupply()
+        // 70a08231 -> balanceOf(address)
+        // dd62ed3e -> allowance(address,address)
+        // a9059cbb -> transfer(address,uint256)
+        // 095ea7b3 -> approve(address,uint256)
+        // 23b872dd -> transferFrom(address,address,uint256)
+
+        let isERC20 = /70a08231/.test(contractCode) // balanceOf(address)
+            && /a9059cbb/.test(contractCode); // transfer(address,uint256)
+
+
+        this.setState({
+            to: txParams.to,
+            myAddress: txParams.from,
+            priceEstimate: priceEstimate,
+            currentBalance: currentBalance,
+            contractCode: contractCode,
+            isERC20: isERC20
+        })
+
+
+        if(isERC20){
+            try {
+                const ERC20 = new web3.eth.Contract(ERC20ABI, txParams.to, {})
+                var tokenName = await ERC20.methods.name().call(),
+                    tokenSymbol = await ERC20.methods.symbol().call(),
+                    tokenDecimals = await ERC20.methods.decimals().call(),
+                    tokenBalance = await ERC20.methods.balanceOf(txParams.from).call(),
+                    txData = abiDecoder.decodeMethod(txParams.data);
+            } catch (err) {
+                Event('ERC20 Error', 0)
+            }
+            if(tokenName){
+                // console.log(tokenName, tokenDecimals, tokenBalance, txParams, txData)
+                Event('ERC20', tokenBalance)
+                let tokenMethodParams = _.fromPairs(txData.params.map(k => [k.name, k.value]));
+
+                this.setState({ 
+                    page: 'widget', 
+                    screen: 'token',
+
+                    insufficientTokens: BN(tokenMethodParams._value).gt(BN(tokenBalance)),
+                    tokenName: tokenName,
+                    tokenSymbol: tokenSymbol,
+                    tokenDecimals: tokenDecimals,
+                    tokenBalance: tokenBalance,
+                    tokenMethodName: txData.name,
+                    tokenMethodParams: tokenMethodParams,
+                })
+                await this.next();
+                this.setState({ page: 'widget', screen: 'loading' })
+                await delay(400);
+
+            }
+        }
 
         if(sufficientLeftovers){
             Event('Sufficient Leftover Funds', currentBalance)
@@ -394,10 +469,6 @@ const rpcMethods = {
             this.setState({ 
                 page: 'widget', 
                 screen: 'leftover',
-                to: txParams.to,
-                myAddress: txParams.from,
-                priceEstimate: priceEstimate,
-                currentBalance: currentBalance
             })
 
             await this.next();
@@ -407,17 +478,13 @@ const rpcMethods = {
             this.setState({ 
                 page: 'widget', 
                 screen: 'credit',
-                to: txParams.to,
-                myAddress: txParams.from,
-                priceEstimate: priceEstimate,
-                currentBalance: currentBalance
             })
         
             let blockNumber = await web3.eth.getBlockNumber()
 
             await this.next();
             this.setState({ page: 'widget', screen: 'loading' })
-            let neededWei = priceEstimate.sub(web3.utils.toBN(currentBalance));
+            let neededWei = priceEstimate.sub(BN(currentBalance));
             let ether = parseFloat(web3.utils.fromWei(neededWei, 'ether'));
 
         
@@ -438,7 +505,7 @@ const rpcMethods = {
                 await untilVisible();
                 let newBalance = await web3.eth.getBalance(txParams.from, 'pending');
                 console.log('new balance (pending)', newBalance)
-                if(web3.utils.toBN(newBalance).gt(priceEstimate)) break;
+                if(BN(newBalance).gt(priceEstimate)) break;
                 await delay(1000 + 100 * i);
                 this.check();
             }
@@ -450,7 +517,7 @@ const rpcMethods = {
                 await untilVisible();
                 let newBalance = await web3.eth.getBalance(txParams.from, 'latest');    
                 console.log('new balance (latest)', newBalance)
-                if(web3.utils.toBN(newBalance).gt(priceEstimate)) break;
+                if(BN(newBalance).gt(priceEstimate)) break;
                 await delay(5000 + 100 * i);
                 this.check();
             }
@@ -656,6 +723,7 @@ async function updateDashboard(){
 }
 
 
+const BN = x => web3.utils.toBN(x || '0');
 
 
 function Widget(props){
@@ -676,6 +744,12 @@ function Widget(props){
     }else if(state.screen === 'finish'){
         next = <div />
         body = <SpinnerBody key='loading' />
+    }else if(state.screen === 'token'){
+        next = <div className="button continue">Continue <RightArrow /></div> 
+        body = <TokenBody />
+
+        // insufficient token funds to continue.
+        if(state.insufficientTokens) next = <div />;
     }else if(state.screen === 'identify'){
         abort = 'Reject'
         next = <div className="button confirm">Allow <CheckMark /></div> 
@@ -774,7 +848,7 @@ function SpinnerBody(){
 }
 
 function WidgetHeader(){
-    return <div className="header">
+    return <div className={"header" + ((chain.slug === 'mainnet') ? ' mainnet' : ' testnet')}>
         <div className="name">
           <a target="_blank" href={location.origin + location.pathname + "?chain=" + chain.slug}>
             <h1><span className="thin">Hyper</span>Mask</h1>
@@ -796,13 +870,48 @@ function SignBody(){
     </div>
 }
 
+
+// TODO: we should make an interface to EtherDelta's contract that is really simple and easy and good.
+function TokenBody(){
+    let state = app.state;
+
+    function d(n){
+        let s = '00000000000000000000' + BN(n).toString()
+        return (s.slice(0, -state.tokenDecimals).replace(/^0+/, '') || '0') + '.' + s.slice(-state.tokenDecimals);
+    }
+
+    return <div className="body">
+        <h2>Transfer <a target="_blank" href={explore(state.to)}><u>{state.tokenName}</u></a></h2>
+        <p>This app has requested <b>{d(state.tokenMethodParams._value)} {state.tokenSymbol}</b>. 
+        You have <b>{d(state.tokenBalance)} {state.tokenSymbol}</b> in your account.</p>
+        {state.insufficientTokens ? [<p style={{ color: 'red' }}>
+            <b>You do not have enough {state.tokenName} to complete this transaction.</b>
+        </p>, <p>
+            Transfer or purchase at least <b> {d(BN(state.tokenMethodParams._value).sub(BN(state.tokenBalance)))} {state.tokenSymbol} </b>
+            to your <a target="_blank" href={location.origin + location.pathname + "?chain=" + chain.slug}><b>HyperMask wallet</b></a> and try again. 
+        </p>]: [<p>
+            You have enough <b>{state.tokenName}</b> to complete this transaction with 
+            <b> {d(BN(state.tokenBalance).sub(BN(state.tokenMethodParams._value)))} {state.tokenSymbol} </b> 
+            to spare.
+        </p>, <p>
+            You will also need <Price wei={state.priceEstimate} /> cover the transaction fee.
+        </p>]}
+        
+    </div>
+}
+
 function Price(props){
+    let state = app.state;
+
     let ether = parseFloat(web3.utils.fromWei(props.wei, 'ether'));
     if(app.state.ethUSDPrice){
-        if(props.buffer){
-            value = Math.max(1, roundUSD(ether * app.state.ethUSDPrice * PRICE_VOLATILITY_BUFFER));    
+        // if you have enough money in your account, display the raw price
+        // otherwise if you need to get money from coinbase, increase the
+        // volatility and round up.
+        if(BN(state.priceEstimate).gt(BN(state.currentBalance))) {
+            value = Math.max(1, roundUSD(ether * state.ethUSDPrice * PRICE_VOLATILITY_BUFFER));    
         }else{
-            value = roundUSD(ether * app.state.ethUSDPrice);
+            value = roundUSD(ether * state.ethUSDPrice);
         }
         return <span><b>{ether} ETH</b> (${ value } USD)</span>
     }else{
@@ -810,15 +919,24 @@ function Price(props){
     }
 }
 
+function Recipient(){
+    let state = app.state;
+    // https://ethereum.stackexchange.com/questions/38381/how-can-i-identify-that-transaction-is-erc20-token-creation-contract
+    return <a target="_blank" href={explore(state.to)}>This {
+        state.contractCode === '0x' ? 
+            <b>user</b> : <b>app</b> }</a>;
+}
+
+
 function LeftoverBody(){
     let state = app.state;
 
     return <div className="body">
         <h2>Pay with Leftover Funds</h2>
         
-        <p><a target="_blank" href={explore(state.to)}>This <b>app</b></a> has requested <Price wei={state.priceEstimate} /> to continue.</p>
+        <p><Recipient /> has requested <Price wei={state.priceEstimate} /> to continue.</p>
         <p>You have <Price wei={state.currentBalance} /> available in leftover funds— enough to complete this 
-        transaction with  <Price wei={web3.utils.toBN(state.currentBalance).sub(state.priceEstimate)} /> to spare.</p>
+        transaction with  <Price wei={BN(state.currentBalance).sub(state.priceEstimate)} /> to spare.</p>
     </div>
 }
 
@@ -828,10 +946,10 @@ function CardBody(){
     return <div className="body">
         <h2>Pay with Debit Card</h2>
         {
-            web3.utils.toBN(state.currentBalance).isZero() ?
-            <p><a target="_blank" href={explore(state.to)}>This <b>app</b></a> has requested <Price wei={state.priceEstimate} /> to continue.</p> :
-            <p><a target="_blank" href={explore(state.to)}>This <b>app</b></a> has requested <Price wei={state.priceEstimate} />, but due to leftover funds, only <Price buffer wei={
-                state.priceEstimate.sub(web3.utils.toBN(state.currentBalance))
+            BN(state.currentBalance).isZero() ?
+            <p><Recipient /> has requested <Price wei={state.priceEstimate} buffer /> to continue.</p> :
+            <p><Recipient /> has requested <Price wei={state.priceEstimate} />, but due to leftover funds, only <Price buffer wei={
+                state.priceEstimate.sub(BN(state.currentBalance))
             } /> is needed to continue.</p>
         }
         
@@ -949,9 +1067,9 @@ const HYPERMASK_DEV_ADDRESS = '0x658AC8Dab114EE16Fba37f3c18Ad734a3542bF63';
 
 function Dashboard(){
     let state = app.state;
-    document.body.className = 'dashboard'
+    document.body.className = 'dashboard' + (chain.slug === 'mainnet' ? ' mainnet' : ' testnet')
 
-    return <div className="main">
+    return <div className={"main"}>
         <div className="header">
             <HypermaskLogo width={400} height={300} />
             <div>
@@ -983,7 +1101,7 @@ function Dashboard(){
         </div>
         <div className="block">
             <div>
-            <button style={{ background: '#ff5722' }} onClick={async () => {
+            <button style={{ background: '#ff00c3' }} onClick={async () => {
                 Event('Download Private Key')
                 let link = document.createElement('a')
                 let wallet = await getWallet()
@@ -1006,10 +1124,10 @@ function Dashboard(){
                     fr.onload = async function(){
                         let restoredPK = Buffer.from(web3.utils.hexToBytes(fr.result.trim()))
                         let restoredWallet = Wallet.fromPrivateKey(restoredPK);
-                        let restoredBalance = web3.utils.toBN(await web3.eth.getBalance(restoredWallet.getAddressString(), 'pending'))
+                        let restoredBalance = BN(await web3.eth.getBalance(restoredWallet.getAddressString(), 'pending'))
 
                         let wallet = await getWallet()
-                        let currentBalance = web3.utils.toBN(await web3.eth.getBalance(wallet.getAddressString(), 'pending'));
+                        let currentBalance = BN(await web3.eth.getBalance(wallet.getAddressString(), 'pending'));
 
                         if(wallet.getAddressString() === restoredWallet.getAddressString()){
                             Event('Restore Current Wallet')
@@ -1046,7 +1164,7 @@ function Dashboard(){
                             }
                             txObj = await fixTx(txObj);
 
-                            let gasValue = web3.utils.toBN(txObj.gasPrice).mul(web3.utils.toBN(txObj.gas))
+                            let gasValue = BN(txObj.gasPrice).mul(BN(txObj.gas))
                             txObj.value = restoredBalance.sub(gasValue)
 
                             let newBalance = txObj.value.add(currentBalance);
@@ -1093,10 +1211,10 @@ function Dashboard(){
                 associated with hypermask.io without first saving a backup of your private key. 
             </div>
 
-            { web3.utils.toBN(state.currentBalance || '0').isZero() ? null : <div>
+            { BN(state.currentBalance || '0').isZero() ? null : <div>
                 <button style={{ background: '#27AE60' }} onClick={async () => {
                     let wallet = await getWallet()
-                    let currentBalance = web3.utils.toBN(await web3.eth.getBalance(wallet.getAddressString(), 'pending'));
+                    let currentBalance = BN(await web3.eth.getBalance(wallet.getAddressString(), 'pending'));
 
 
                     let txObj = {
@@ -1105,14 +1223,14 @@ function Dashboard(){
                         value: currentBalance
                     }
                     txObj = await fixTx(txObj);
-                    let gasValue = web3.utils.toBN(txObj.gasPrice).mul(web3.utils.toBN(txObj.gas))
+                    let gasValue = BN(txObj.gasPrice).mul(BN(txObj.gas))
                     txObj.value = currentBalance.sub(gasValue)
                     
 
                     if(confirm(`Do you want to donate ${web3.utils.fromWei(currentBalance, 'ether')
                         } ETH to the HyperMask development team (${wallet.getAddressString()})?\n\n${
                         web3.utils.fromWei(gasValue, 'ether')} ETH (${
-                        (gasValue.mul(web3.utils.toBN(10000) ).div(currentBalance).toNumber() / 100).toFixed(2)
+                        (gasValue.mul(BN(10000) ).div(currentBalance).toNumber() / 100).toFixed(2)
                         }%) will be lost to transaction fees.`)){
 
                         Event('Donate (Sent)', currentBalance)
@@ -1139,6 +1257,60 @@ function Dashboard(){
                     
 
             }}><b>Donate</b> to HyperMask Developers</button>
+
+            { !web3.givenProvider ? null : <button style={{ background: '#f76c20', float: 'right' }} onClick={async () => {
+                let nativeWeb3 = new Web3(web3.givenProvider);
+
+                let myAccounts = await nativeWeb3.eth.getAccounts();
+
+                if(myAccounts.length === 0){
+                    alert('Unable to determine your MetaMask wallet address. Please unlock your wallet and try again. ')
+                    return
+                }
+                // console.log(nativeWeb3)
+                let wallet = await getWallet()
+                let currentBalance = BN(await web3.eth.getBalance(wallet.getAddressString(), 'pending'));
+
+                let txObj = {
+                    from: wallet.getAddressString(),
+                    to: myAccounts[0],
+                    value: currentBalance
+                }
+                txObj = await fixTx(txObj);
+                let gasValue = BN(txObj.gasPrice).mul(BN(txObj.gas))
+                txObj.value = currentBalance.sub(gasValue)
+                
+
+                if(confirm(`Do you want to transfer ${web3.utils.fromWei(currentBalance, 'ether')
+                    } ETH to your MetaMask wallet (${wallet.getAddressString()})?\n\n${
+                    web3.utils.fromWei(gasValue, 'ether')} ETH (${
+                    (gasValue.mul(BN(10000) ).div(currentBalance).toNumber() / 100).toFixed(2)
+                    }%) will be lost to transaction fees.`)){
+
+                    Event('Transfer MetaMask (Sent)', currentBalance)
+
+                    const tx = new EthereumTx(txObj)
+                    tx.sign(wallet.getPrivateKey())
+                    const serializedTx = tx.serialize()
+                    const signedTx = ethUtil.bufferToHex(serializedTx);
+
+                    web3.eth.sendSignedTransaction(signedTx)
+                        .on('transactionHash', () => {
+                            setTimeout(updateDashboard, 500)
+                            alert('Transfer complete!')
+                        })
+                        .on('receipt', () => setTimeout(updateDashboard, 500))
+                        .on('confirmation', () => setTimeout(updateDashboard, 500))
+                        .on('error', error => alert(error))
+
+
+                }else{
+                    Event('Transfer MetaMask (Cancel)', currentBalance)
+
+                }
+                
+
+            }}><b>Transfer</b> to {/Metamask/.test(web3.givenProvider.constructor.name) ? 'MetaMask' : 'Native'} Wallet</button>}
             </div>}
         </div>
 
