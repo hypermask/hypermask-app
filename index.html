@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HyperMask</title>
+</head>
+<body>
+    <div id="root"></div>
+    <div id="payment_frame_parent" style="display: none"></div>
+    <script src="./index.js"></script>
+    <script>
+        // Disable Google Analytics reporting by navigating to https://hypermask.io/app
+        // and checking the "Disable Google Analytics" option. For a more robust strategy
+        // install uBlock Origin or some other ad blocker. 
+
+        if(!localStorage.disableAnalytics){
+            var s = document.createElement('script');
+            s.setAttribute('src', "https://www.googletagmanager.com/gtag/js?id=UA-114066266-1");
+            s.async = true;
+            document.body.appendChild(s);
+
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'UA-114066266-1');
+        }
+    </script>
+</body>
+</html>
