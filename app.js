@@ -1,4 +1,3 @@
-
 import _ from 'lodash'
 import React from 'react'
 import ReactDOM from 'react-dom'
@@ -641,7 +640,6 @@ async function runPaymentFlow(amount, address){
             address: address,
             amount: amount, // minimum purchase of $1
             code: '93cc359c-bf50-5ecc-b780-db05d4fbe263',
-            // code: '9ec56d01-7e81-5017-930c-513daa27bb6a', // be naughty and use metamask's
             currency: 'USD',
             prefill_name: undefined,
             prefill_phone: undefined,
@@ -699,7 +697,6 @@ async function runPaymentFlow(amount, address){
 }
 
 function handlePaymentFrameEvent(e) {
-    // console.log('COINBASE', e.data)
     if(e.data.event === "modal_closed") {
         if(app.state.fail){ app.state.fail('Transaction cancelled from payment frame') }
     }else if(e.data.event === 'buy_completed'){
