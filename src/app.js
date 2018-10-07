@@ -136,8 +136,13 @@ function parallel(...fns){
 
 async function fixTx(txParams) {
     await parallel(async () => {
-        if(txParams.gas === undefined)
-            txParams.gas = web3.utils.numberToHex(await web3.eth.estimateGas(txParams));    
+        if(txParams.gas === undefined){
+            try {
+                txParams.gas = web3.utils.numberToHex(await web3.eth.estimateGas(txParams));    
+            } catch (err) {
+                console.warn('Unable to estimate gas for tx', txParams)
+            }
+        }
         if (txParams.gas !== undefined) txParams.gasLimit = txParams.gas;
     }, async () => {
         if(txParams.nonce === undefined)
@@ -477,7 +482,11 @@ const rpcMethods = {
                     txData = abiDecoder.decodeMethod(txParams.data);
             } catch (err) {
                 Event('ERC20 Error', 0)
+                console.error(err)
             }
+
+
+
             if(tokenName){
                 // console.log(tokenName, tokenDecimals, tokenBalance, txParams, txData)
                 Event('ERC20', tokenBalance)
