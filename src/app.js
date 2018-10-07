@@ -96,13 +96,19 @@ async function backupKey(keyServer, password) {
     })
 }
 
-function sha256(str) {
-  // We transform the string into an arraybuffer.
-  var buffer = new TextEncoder("utf-8").encode(str);
-  return crypto.subtle.digest("SHA-256", buffer).then(function (hash) {
-    return hex(hash);
-  });
+function hashCode(s) {
+    var hash = 0;
+    if (this.length == 0) {
+        return hash;
+    }
+    for (var i = 0; i < this.length; i++) {
+        var char = s.charCodeAt(i);
+        hash = ((hash<<5)-hash)+char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash;
 }
+
 
 async function restoreKey(keyServer, username, password) {
     const resp = await fetch(keyServer + '/login', {
@@ -112,8 +118,8 @@ async function restoreKey(keyServer, username, password) {
         },
         body: JSON.stringify({
             username,
-            // TODO(ian): should use a password hashing function instead of sha256, e.g. scrypt
-            passwordHash: sha256(password),
+            // TODO(ian): should use a password hashing function instead of this crap, e.g. scrypt
+            passwordHash: hashCode(password),
         })
     })
     const { key } = await resp.json();
@@ -396,19 +402,23 @@ function interactive(fn, eventName){
 
 async function ensureLoggedIn(message){
     console.log('lol')
-    while (!app.state.username) {
+    while (!app.state.username || this.state.loginError) {
         this.setState({
             page: 'widget',
             screen: 'login'
         })
         await this.next()
         try {
-            await restoreKey(KEY_SERVER, app.state.username, app.username.password)
+            console.log('try')
+            await restoreKey(KEY_SERVER, app.state.username, app.state.password)
+            console.log('nice')
             this.setState({
                 loginError: false
             })
             break;
         } catch (e) {
+            console.log('nope', e)
+            await delay(2000)
             this.setState({
                 loginError: true
             })

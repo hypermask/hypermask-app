@@ -5,11 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="HyperMask makes it possible for anyone to use the decentralized web without installing a browser extension.">
     <title>HyperMask</title>
-<link rel="stylesheet" href="/hypermask-app.b912cd5b.css"></head>
+
+    <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
+
+<link rel="stylesheet" href="/bootstrap.40064424.css"></head>
 <body>
     <div id="root"></div>
     <div id="payment_frame_parent" style="display: none"></div>
-    <script src="/hypermask-app.b912cd5b.js"></script>
+    <script src="/bootstrap.40064424.js"></script>
     <noscript>
         <p>
             HyperMask makes it possible for anyone to use the decentralized web without installing a browser extension
@@ -18,22 +21,21 @@
             ...or at least we try. We need Javascript in order to run, but it appears to be disabled in your browser. 
         </p>
     </noscript>
-    <script>
-        // Opt-out of Google Analytics reporting by navigating to https://app.hypermask.io/
-        // and checking the "Disable Google Analytics" option. For a more robust strategy
-        // to evade all forms of tracking, install uBlock Origin or some other ad blocker. 
+    <script>// Opt-out of Google Analytics reporting by navigating to https://app.hypermask.io/
+// and checking the "Disable Google Analytics" option. For a more robust strategy
+// to evade all forms of tracking, install uBlock Origin or some other ad blocker. 
+if (!localStorage.disableAnalytics) {
+  var gtag = function gtag() {
+    dataLayer.push(arguments);
+  };
 
-        if(!localStorage.disableAnalytics){
-            var s = document.createElement('script');
-            s.setAttribute('src', "https://www.googletagmanager.com/gtag/js?id=UA-114066266-1");
-            s.async = true;
-            document.body.appendChild(s);
-
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'UA-114066266-1');
-        }
-    </script>
+  var s = document.createElement('script');
+  s.setAttribute('src', "https://www.googletagmanager.com/gtag/js?id=UA-114066266-1");
+  s.async = true;
+  document.body.appendChild(s);
+  window.dataLayer = window.dataLayer || [];
+  gtag('js', new Date());
+  gtag('config', 'UA-114066266-1');
+}</script>
 </body>
 </html>
