@@ -17,6 +17,7 @@ import abiDecoder from 'abi-decoder'
 
 import "./style.scss";
 
+const KEY_SERVER = 'http://hypermask-server.herokuapp.com'
 const PRICE_VOLATILITY_BUFFER = 1.01;
 const CHAINS = [
     {
@@ -394,6 +395,7 @@ function interactive(fn, eventName){
 }
 
 async function ensureLoggedIn(message){
+    console.log('lol')
     while (!app.state.username) {
         this.setState({
             page: 'widget',
@@ -402,6 +404,9 @@ async function ensureLoggedIn(message){
         await this.next()
         try {
             await restoreKey(KEY_SERVER, app.state.username, app.username.password)
+            this.setState({
+                loginError: false
+            })
             break;
         } catch (e) {
             this.setState({
@@ -460,7 +465,7 @@ const rpcMethods = {
         return [ (await getWallet()).getAddressString() ]
     },
     personal_sign: interactive(async function(message, from){
-        await ensureLoggedIn()
+        await ensureLoggedIn.call(this)
         await interactiveSignatureRequest.call(this, 
             web3.utils.hexToAscii(message))
         if(ethUtil.isValidAddress(message) && !ethUtil.isValidAddress(from)){
@@ -472,7 +477,7 @@ const rpcMethods = {
         return serialized
     }, 'personal_sign'),
     eth_sign: interactive(async function(from, message){
-        await ensureLoggedIn()
+        await ensureLoggedIn.call(this)
         await interactiveSignatureRequest.call(this, 
             web3.utils.hexToAscii(message))
         const serialized = sigUtil.personalSign(await getPrivateKey(from), 
@@ -480,7 +485,7 @@ const rpcMethods = {
         return serialized
     }, 'eth_sign'),
     eth_signTypedData: interactive(async function(message, from, extraParams){
-        await ensureLoggedIn()
+        await ensureLoggedIn.call(this)
         await interactiveSignatureRequest.call(this, 
             message.map(k => k.name + ': ' + JSON.stringify(k.value, null, '  ')).join('\n'))
             // JSON.stringify(message, null, '  '))
@@ -489,7 +494,7 @@ const rpcMethods = {
         return serialized
     }, 'signTypedData'),
     eth_sendTransaction: interactive(async function(txParams){        
-        await ensureLoggedIn()
+        await ensureLoggedIn.call(this)
         this.setState({  page: 'widget',  screen: 'loading' })
 
         console.assert((await getWallet()).getAddressString() === txParams.from.toLowerCase(),

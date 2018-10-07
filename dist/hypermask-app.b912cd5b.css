@@ -1,0 +1,264 @@
+html {
+  background: #BB6BD9; }
+
+body {
+  font-family: Avenir;
+  margin: 0;
+  background: radial-gradient(773.46px at 17.43% 24.02%, #9B51E0 0%, #BB6BD9 100%); }
+
+.hypermask-logo line {
+  stroke-width: 2;
+  stroke: #ddd; }
+
+.hypermask-logo circle {
+  r: 3;
+  fill: white; }
+
+.hypermask-logo text {
+  alignment-baseline: middle;
+  font-size: 52px;
+  font-family: Menlo, sans-serif;
+  stroke-width: 0;
+  stroke: black;
+  text-anchor: middle;
+  font-weight: 100; }
+
+.body.spinner .hypermask-logo line {
+  stroke-width: 1;
+  stroke: #ccc;
+  transition: stroke 2s linear; }
+
+.body.spinner .hypermask-logo circle {
+  r: 2;
+  fill: #777; }
+
+.body.spinner .hypermask-logo text {
+  transition: stroke 5s linear; }
+
+.body.spinner.wait-pending text {
+  fill: #AA6A2A; }
+
+.body.spinner.wait-pending line {
+  stroke: #AA6A2A;
+  opacity: 0.4; }
+
+.body.spinner.wait-latest text {
+  fill: #006699; }
+
+.body.spinner.wait-latest line {
+  stroke: #006699;
+  opacity: 0.4; }
+
+.body.spinner.spinner-finish line {
+  stroke: #BB6BD9;
+  opacity: 0.4; }
+
+body.dashboard {
+  background: radial-gradient(773.46px at 17.43% 24.02%, #9B51E0 0%, #BB6BD9 100%);
+  margin-bottom: 100px; }
+  body.dashboard.testnet {
+    background: radial-gradient(773.46px at 17.43% 24.02%, #ff8100 0%, #BB6BD9 100%); }
+  body.dashboard .header {
+    text-align: center;
+    color: white;
+    font-size: 40px;
+    padding-bottom: 100px;
+    padding-top: 20px; }
+    body.dashboard .header h1 {
+      margin-top: -200px; }
+    body.dashboard .header h2 {
+      font-size: 30px;
+      text-transform: uppercase;
+      margin-top: -20px;
+      font-weight: 100;
+      opacity: 0.8; }
+    body.dashboard .header svg.hypermask-logo {
+      opacity: 0.4; }
+      body.dashboard .header svg.hypermask-logo line {
+        stroke-width: 1; }
+  body.dashboard .block {
+    word-wrap: break-word;
+    background: #953FB5;
+    box-shadow: 0px 2px 24px rgba(255, 255, 255, 0.1);
+    padding: 50px;
+    max-width: 800px;
+    margin: 0 auto;
+    font-size: 25px;
+    margin-bottom: 50px;
+    border-radius: 5px;
+    color: white; }
+    body.dashboard .block .caveat {
+      font-size: 18px;
+      color: white;
+      opacity: 0.7; }
+    body.dashboard .block > div {
+      margin-bottom: 20px;
+      overflow: auto; }
+    body.dashboard .block button {
+      background: green;
+      color: white;
+      cursor: pointer;
+      font-size: 20px;
+      border: 0;
+      border-radius: 3px;
+      padding: 10px 20px;
+      margin: 5px; }
+    body.dashboard .block label {
+      font-size: 20px; }
+    body.dashboard .block input {
+      margin-right: 10px; }
+
+pre {
+  white-space: pre-wrap;
+  border-left: 5px solid #b161dc;
+  padding-left: 20px;
+  overflow: auto;
+  max-height: 180px; }
+
+#app {
+  margin: auto;
+  width: 350px;
+  height: 483px;
+  overflow: hidden;
+  background: white;
+  display: flex;
+  flex-direction: column; }
+  #app .slogan {
+    font-size: 70%;
+    font-weight: 100;
+    text-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
+    opacity: 0.7; }
+  #app .header {
+    background: radial-gradient(267.65px at 18.56% 31.18%, #9B51E0 0%, #BB6BD9 100%);
+    overflow: auto;
+    color: white;
+    padding: 5px 30px;
+    display: flex;
+    align-items: center; }
+  #app .header.testnet {
+    background: radial-gradient(267.65px at 18.56% 31.18%, #ff8100 0, #bb6bd9 100%); }
+  #app .footer {
+    padding: 20px 30px;
+    padding-top: 0;
+    display: flex; }
+    #app .footer .button {
+      font-weight: 300;
+      line-height: normal;
+      font-size: 24px;
+      cursor: pointer; }
+    #app .footer .cancel {
+      text-align: left;
+      color: #EB5757; }
+    #app .footer .loading {
+      color: #888;
+      text-align: right;
+      cursor: default; }
+    #app .footer .continue {
+      text-align: right;
+      color: #2F80ED; }
+      #app .footer .continue svg {
+        vertical-align: middle;
+        opacity: 0.7; }
+    #app .footer .confirm {
+      color: #27AE60;
+      text-align: right; }
+      #app .footer .confirm svg {
+        opacity: 0.7; }
+  #app .main {
+    flex: 1;
+    padding: 20px 0;
+    padding-bottom: 0;
+    position: relative;
+    overflow: hidden; }
+    #app .main .body {
+      position: absolute;
+      padding: 0 30px; }
+  #app .fade-enter {
+    opacity: 0; }
+  #app .fade-enter.fade-enter-active {
+    opacity: 1;
+    transition: opacity 200ms ease-in; }
+  #app .fade-leave {
+    opacity: 1; }
+  #app .fade-leave.fade-leave-active {
+    opacity: 0;
+    transition: opacity 200ms ease-in; }
+
+body.widget {
+  overflow: auto; }
+
+@media (min-height: 700px) {
+  body.widget {
+    background: #575757;
+    padding-top: 100px; }
+  #app {
+    border-radius: 20px;
+    box-shadow: 3px 0px 10px rgba(0, 0, 0, 0.2); } }
+
+.thin {
+  font-weight: 100; }
+
+h1 {
+  font-weight: 500;
+  text-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
+  margin: 0; }
+
+h2 {
+  margin: 0; }
+
+.caveat {
+  font-size: 80%;
+  color: #777; }
+
+.name {
+  flex: 1; }
+
+a {
+  text-decoration: none;
+  color: inherit; }
+
+#payment_frame_parent {
+  transform: translateX(350px);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  bottom: 0;
+  border-radius: 20px;
+  animation-duration: 0.4s;
+  animation-fill-mode: forwards; }
+  #payment_frame_parent #payment_modal_iframe {
+    transition: all 0.3s ease-out;
+    background-color: transparent;
+    border: 0px none transparent;
+    display: block;
+    visibility: visible;
+    margin: 0px;
+    padding: 0px;
+    left: 0px;
+    top: -15px;
+    width: 350px;
+    height: 560px;
+    border-radius: 20px;
+    position: absolute;
+    z-index: 9999;
+    overflow: hidden; }
+  #payment_frame_parent.enter {
+    animation-name: payment-entrance-animation; }
+  #payment_frame_parent.exit {
+    animation-name: payment-exit-animation; }
+
+@keyframes payment-entrance-animation {
+  from {
+    transform: translateX(350px); }
+  to {
+    transform: translateX(0px); } }
+
+@keyframes payment-exit-animation {
+  from {
+    opacity: 1;
+    transform: translateX(0px); }
+  to {
+    opacity: 0;
+    transform: translateX(0px); } }
