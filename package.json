@@ -36,5 +36,8 @@
     "sha3": "^1.2.2",
     "web3": "^1.0.0-beta.34",
     "web3-provider-engine": "^13.8.0"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.3"
   }
 }

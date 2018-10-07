@@ -957,9 +957,9 @@ function Price(props){
         }else{
             value = roundUSD(ether * state.ethUSDPrice);
         }
-        return <span><b>{ether} ETH</b> (${ value } USD)</span>
+        return <span><b>${ value } USD</b> ({ether} ETH)</span>
     }else{
-        return <span><b>{ether} ETH</b></span>
+        return <span>{ether} ETH</span>
     }
 }
 
