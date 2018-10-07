@@ -393,6 +393,23 @@ function interactive(fn, eventName){
     })
 }
 
+async function ensureLoggedIn(message){
+    while (!app.state.username) {
+        this.setState({
+            page: 'widget',
+            screen: 'login'
+        })
+        await this.next()
+        try {
+            await restoreKey(KEY_SERVER, app.state.username, app.username.password)
+            break;
+        } catch (e) {
+            this.setState({
+                loginError: true
+            })
+        }
+    }
+}
 
 async function interactiveSignatureRequest(message){
     this.setState({ 
@@ -443,6 +460,7 @@ const rpcMethods = {
         return [ (await getWallet()).getAddressString() ]
     },
     personal_sign: interactive(async function(message, from){
+        await ensureLoggedIn()
         await interactiveSignatureRequest.call(this, 
             web3.utils.hexToAscii(message))
         if(ethUtil.isValidAddress(message) && !ethUtil.isValidAddress(from)){
@@ -454,6 +472,7 @@ const rpcMethods = {
         return serialized
     }, 'personal_sign'),
     eth_sign: interactive(async function(from, message){
+        await ensureLoggedIn()
         await interactiveSignatureRequest.call(this, 
             web3.utils.hexToAscii(message))
         const serialized = sigUtil.personalSign(await getPrivateKey(from), 
@@ -461,6 +480,7 @@ const rpcMethods = {
         return serialized
     }, 'eth_sign'),
     eth_signTypedData: interactive(async function(message, from, extraParams){
+        await ensureLoggedIn()
         await interactiveSignatureRequest.call(this, 
             message.map(k => k.name + ': ' + JSON.stringify(k.value, null, '  ')).join('\n'))
             // JSON.stringify(message, null, '  '))
@@ -469,6 +489,7 @@ const rpcMethods = {
         return serialized
     }, 'signTypedData'),
     eth_sendTransaction: interactive(async function(txParams){        
+        await ensureLoggedIn()
         this.setState({  page: 'widget',  screen: 'loading' })
 
         console.assert((await getWallet()).getAddressString() === txParams.from.toLowerCase(),
@@ -860,6 +881,9 @@ function Widget(props){
     }else if(state.screen === 'sign'){
         next = <div className="button confirm">Sign <CheckMark /></div> 
         body = <SignBody />
+    }else if(state.screen === 'login'){
+        next = <div className="button confirm">Login <CheckMark /></div> 
+        body = <LoginBody />
     }else{
         next = <div />
         body = <div className="body">ERROR: Screen "{state.screen}" not recognized. </div>
@@ -967,6 +991,19 @@ function SignBody(){
         <h2>Sign Message</h2>
         <p>This app has requested <b>your signature</b> on the following message:</p>
         <pre>{app.state.message || <i>(empty message)</i>}</pre>
+    </div>
+}
+
+function LoginBody(){
+    return <div className="body">
+        <h2>Login</h2>
+        <p>Use your existing HyperMask credentials.</p>
+        <input type="text" placeholder="username" onChange={e => {
+            app.state.username = e.target.value
+        }}/>
+        <input type="password" placeholder="password" onChange={e => {
+            app.state.password = e.target.value
+        }}/>
     </div>
 }
 
