@@ -81,6 +81,47 @@ function findChain(idOrSlug){
     }
 }
 
+// KEY BACKUP AND RESTORE (ian)
+
+async function backupKey(keyServer, password) {
+    return await fetch(keyServer + '/store', {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify({
+            key: (await getWallet()).toV3(password)
+        })
+    })
+}
+
+function sha256(str) {
+  // We transform the string into an arraybuffer.
+  var buffer = new TextEncoder("utf-8").encode(str);
+  return crypto.subtle.digest("SHA-256", buffer).then(function (hash) {
+    return hex(hash);
+  });
+}
+
+async function restoreKey(keyServer, username, password) {
+    const resp = await fetch(keyServer + '/login', {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify({
+            username,
+            // TODO(ian): should use a password hashing function instead of sha256, e.g. scrypt
+            passwordHash: sha256(password),
+        })
+    })
+    const { key } = await resp.json();
+    const wallet = Wallet.fromV3(key, password);
+    setWallet({
+        masterKey: wallet.getPrivateKey().toString('hex')
+    })
+}
+
 
 const query = queryString.parse(location.search);
 var origin = query.origin;
