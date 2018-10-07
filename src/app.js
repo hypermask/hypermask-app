@@ -474,20 +474,27 @@ const rpcMethods = {
 
         if(isERC20){
             try {
-                const ERC20 = new web3.eth.Contract(ERC20ABI, txParams.to, {})
-                var tokenName = await ERC20.methods.name().call(),
-                    tokenSymbol = await ERC20.methods.symbol().call(),
-                    tokenDecimals = await ERC20.methods.decimals().call(),
-                    tokenBalance = await ERC20.methods.balanceOf(txParams.from).call(),
-                    txData = abiDecoder.decodeMethod(txParams.data);
+                var txData = abiDecoder.decodeMethod(txParams.data)
             } catch (err) {
-                Event('ERC20 Error', 0)
-                console.error(err)
+                console.warn("Unable to decode method for ERC20", txParams)
+                isERC20 = false;
             }
 
-
-
-            if(tokenName){
+            if(isERC20){
+                try {
+                    const ERC20 = new web3.eth.Contract(ERC20ABI, txParams.to, {})
+                    var tokenName = await ERC20.methods.name().call(),
+                        tokenSymbol = await ERC20.methods.symbol().call(),
+                        tokenDecimals = await ERC20.methods.decimals().call(),
+                        tokenBalance = await ERC20.methods.balanceOf(txParams.from).call();
+                } catch (err) {
+                    Event('ERC20 Error', 0)
+                    console.error(err)
+                    isERC20 = false;
+                }
+            }
+            
+            if(isERC20 && tokenName){
                 // console.log(tokenName, tokenDecimals, tokenBalance, txParams, txData)
                 Event('ERC20', tokenBalance)
                 let tokenMethodParams = _.fromPairs(txData.params.map(k => [k.name, k.value]));
@@ -507,7 +514,6 @@ const rpcMethods = {
                 await this.next();
                 this.setState({ page: 'widget', screen: 'loading' })
                 await delay(400);
-
             }
         }
 
@@ -600,6 +606,7 @@ async function rpc(method, ...params){
     };
     window.parent.postMessage(msg, origin)
     return await new Promise((resolve, reject) => {
+        rpcHandlers[msg.id + '$'] = [method, params]
         rpcHandlers[msg.id] = [ resolve, reject ]
     })
 }
@@ -621,6 +628,8 @@ window.addEventListener("message", function(event){
         let data = event.data;
         if(data.id in rpcHandlers){
             let [resolve, reject] = rpcHandlers[data.id];
+            console.log(data, rpcHandlers[data.id + '$'])
+
             if(data.error){
                 reject(data.error)
             }else{
@@ -933,7 +942,7 @@ function TokenBody(){
     }
 
     return <div className="body">
-        <h2>Transfer <a target="_blank" href={explore(state.to)}><u>{state.tokenName}</u></a></h2>
+        <h2>Insufficient <a target="_blank" href={explore(state.to)}><u>{state.tokenName}</u></a></h2>
         <p>This app has requested <b>{d(state.tokenMethodParams._value)} {state.tokenSymbol}</b>. 
         You have <b>{d(state.tokenBalance)} {state.tokenSymbol}</b> in your account.</p>
         {state.insufficientTokens ? [<p style={{ color: 'red' }}>
