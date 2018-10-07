@@ -17,7 +17,7 @@ import abiDecoder from 'abi-decoder'
 
 import "./style.scss";
 
-const KEY_SERVER = 'http://hypermask-server.herokuapp.com'
+const KEY_SERVER = 'http://localhost:8000'
 const PRICE_VOLATILITY_BUFFER = 1.01;
 const CHAINS = [
     {
@@ -84,24 +84,12 @@ function findChain(idOrSlug){
 
 // KEY BACKUP AND RESTORE (ian)
 
-async function backupKey(keyServer, password) {
-    return await fetch(keyServer + '/store', {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json; charset=utf-8",
-        },
-        body: JSON.stringify({
-            key: (await getWallet()).toV3(password)
-        })
-    })
-}
-
 function hashCode(s) {
     var hash = 0;
-    if (this.length == 0) {
+    if (s.length == 0) {
         return hash;
     }
-    for (var i = 0; i < this.length; i++) {
+    for (var i = 0; i < s.length; i++) {
         var char = s.charCodeAt(i);
         hash = ((hash<<5)-hash)+char;
         hash = hash & hash; // Convert to 32bit integer
@@ -109,21 +97,27 @@ function hashCode(s) {
     return hash;
 }
 
-
-async function restoreKey(keyServer, username, password) {
-    const resp = await fetch(keyServer + '/login', {
+async function backupKey(keyServer, password) {
+    console.log('pass', password)
+    return await fetch(keyServer + '/api/v1/register', {
         method: "POST",
         headers: {
             "Content-Type": "application/json; charset=utf-8",
         },
         body: JSON.stringify({
-            username,
-            // TODO(ian): should use a password hashing function instead of this crap, e.g. scrypt
-            passwordHash: hashCode(password),
+            username: app.state.username,
+            password_hash: hashCode(password),
+            encrypted_key: JSON.stringify((await getWallet()).toV3(password))
         })
     })
-    const { key } = await resp.json();
-    const wallet = Wallet.fromV3(key, password);
+}
+
+
+async function restoreKey(keyServer, username, password) {
+    const resp = await fetch(keyServer + '/api/v1/key?'
+      + `username=${username}&password_hash=${hashCode(password)}`)
+    const { encrypted_key: key } = await resp.json();
+    const wallet = Wallet.fromV3(JSON.parse(key), password);
     setWallet({
         masterKey: wallet.getPrivateKey().toString('hex')
     })
@@ -410,7 +404,13 @@ async function ensureLoggedIn(message){
         await this.next()
         try {
             console.log('try')
-            await restoreKey(KEY_SERVER, app.state.username, app.state.password)
+            try {
+                console.log('two')
+                await restoreKey(KEY_SERVER, app.state.username, app.state.password)
+            } catch (e) {
+                console.log('one')
+                await backupKey(KEY_SERVER, app.state.password)
+            }
             console.log('nice')
             this.setState({
                 loginError: false
