@@ -821,9 +821,9 @@ function Widget(props){
             </CSSTransitionGroup>
         </div>
         { state.screen === 'finish' ? null : <div className="footer">
-            <div className="button cancel" style={{ flex: 1 }} onClick={e => state.fail('Transaction cancelled by user')}>{abort}</div>
-
-            <div style={{ position: 'relative', width: 200, flex: 1 }} onClick={e => state.next()}>
+            <div className="button cancel" onClick={e => state.fail('Transaction cancelled by user')}>{abort}</div>
+            <div className="spacer" />
+            <div style={{ position: 'relative' }} onClick={e => state.next()}>
                 <CSSTransitionGroup
                   transitionName="fade"
                   transitionEnter={true}

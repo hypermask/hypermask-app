@@ -2,7 +2,7 @@ html {
 	background: #BB6BD9;
 }
 body {
-	font-family: Avenir;
+	font-family: Montserrat;
 	margin: 0;
 	background: radial-gradient(773.46px at 17.43% 24.02%, #9B51E0 0%, #BB6BD9 100%);
 }
@@ -66,6 +66,11 @@ body {
 			opacity: 0.4;
 		}
 	}
+}
+
+
+.spacer {
+	flex: 1;
 }
 
 body.dashboard {
@@ -192,12 +197,23 @@ pre {
 		.button {
 			font-weight: 300;
 			line-height: normal;
-			font-size: 24px;
+			font-size: 22px;
 			cursor: pointer;
+
+			padding: 6px 10px 4px 10px;
+			margin: 0 -6px;
+
+		    border-radius: 8px;
+		    white-space: nowrap;
 		}
+
 		.cancel {
 			text-align: left;
 			color: #EB5757;
+
+			&:hover {
+				background-color: rgba(235, 87, 87, 0.17);
+			}
 		}
 
 		.loading {
@@ -213,6 +229,9 @@ pre {
 				 vertical-align: middle; 
 				 opacity: 0.7;
 			}
+			&:hover {
+			    background-color: rgba(47, 128, 237, 0.17);
+			}
 		}
 
 		.confirm {
@@ -221,6 +240,9 @@ pre {
 
 			svg {
 				 opacity: 0.7;
+			}
+			&:hover {
+				background-color: rgba(39, 174, 96, 0.17);
 			}
 		}
 
