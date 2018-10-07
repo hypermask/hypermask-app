@@ -227,6 +227,11 @@ function roundUSD(usdAmount){
         usdAmount.toFixed(2)
 }
 
+function roundETH(ethAmount){
+    const prec = 10000;
+    return Math.ceil(ethAmount * prec) / prec
+}
+
 // an awaitable queue is an object with two methods
 // pop() returns a promise that resolves when the next bit of data pushed onto the queue
 // unless there is already a surplus of data pushed onto the queue, in that case it returns
@@ -665,7 +670,7 @@ async function runPaymentFlow(amount, address){
         });
 
     }else{
-        url = 'https://hypermask.io/foinbase.html?' + queryString.stringify({
+        url = 'https://localhost:7777/widget?' + queryString.stringify({
             address: address,
             amount: amount,
             chain: chain.slug,
@@ -673,6 +678,9 @@ async function runPaymentFlow(amount, address){
         });
         embedFrame = true;
     }
+
+
+
     if(query.embed !== undefined){
         embedFrame = query.embed != 'false'
     }
@@ -887,7 +895,7 @@ function WaitBody(){
         <HypermaskLogo width={300} height={200} clock speed={3} />
         
         <p className="caveat" style={{marginTop: -20}}>
-            Waiting for <b>Coinbase</b> to transfer ETH into your <a target="_blank" href={explore(state.myAddress)}><b>HyperMask wallet</b></a>. This may take a few minutes. { state.phase == 'latest' ? <span>
+            Waiting for payment provider to transfer ETH into your <a target="_blank" href={explore(state.myAddress)}><b>HyperMask wallet</b></a>. This may take a few minutes. { state.phase == 'latest' ? <span>
                 Waiting for blockchain confirmation...
             </span>: <span>Searching for inbound transaction...</span>}
         </p>
@@ -940,7 +948,7 @@ function TokenBody(){
     }
 
     return <div className="body">
-        <h2>Insufficient <a target="_blank" href={explore(state.to)}><u>{state.tokenName}</u></a></h2>
+        <h2><a target="_blank" href={explore(state.to)}><u>{state.tokenName}</u></a></h2>
         <p>This app has requested <b>{d(state.tokenMethodParams._value)} {state.tokenSymbol}</b>. 
         You have <b>{d(state.tokenBalance)} {state.tokenSymbol}</b> in your account.</p>
         {state.insufficientTokens ? [<p style={{ color: 'red' }}>
@@ -973,9 +981,9 @@ function Price(props){
         }else{
             value = roundUSD(ether * state.ethUSDPrice);
         }
-        return <span><b>${ value } USD</b> ({ether} ETH)</span>
+        return <span><b>${ value } USD</b> ({roundETH(ether)} ETH)</span>
     }else{
-        return <span>{ether} ETH</span>
+        return <span>{roundETH(ether)} ETH</span>
     }
 }
 
