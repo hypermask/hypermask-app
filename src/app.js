@@ -656,34 +656,32 @@ async function runPaymentFlow(amount, address){
     
     let url;
     let embedFrame = false;
-    if(chain.slug === 'mainnet'){
-        url = 'https://buy.coinbase.com/?' + queryString.stringify({
-            address: address,
-            amount: amount, // minimum purchase of $1
-            code: '93cc359c-bf50-5ecc-b780-db05d4fbe263',
-            currency: 'USD',
-            prefill_name: undefined,
-            prefill_phone: undefined,
-            prefill_email: undefined,
-            crypto_currency: 'ETH',
-            state: undefined
-        });
-
-    }else{
-        url = 'https://localhost:7777/widget?' + queryString.stringify({
+    // if(chain.slug === 'mainnet'){
+    //     url = 'https://buy.coinbase.com/?' + queryString.stringify({
+    //         address: address,
+    //         amount: amount, // minimum purchase of $1
+    //         code: '93cc359c-bf50-5ecc-b780-db05d4fbe263',
+    //         currency: 'USD',
+    //         prefill_name: undefined,
+    //         prefill_phone: undefined,
+    //         prefill_email: undefined,
+    //         crypto_currency: 'ETH',
+    //         state: undefined
+    //     });
+    // }else{
+        url = 'https://coinstripe.hypermask.io/widget?' + queryString.stringify({
             address: address,
             amount: amount,
             chain: chain.slug,
             currency: 'USD',
         });
         embedFrame = true;
-    }
-
-
+    // }
 
     if(query.embed !== undefined){
         embedFrame = query.embed != 'false'
     }
+
     if(embedFrame){
         let link = document.createElement('a')
         link.href = url;
