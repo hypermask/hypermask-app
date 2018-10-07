@@ -606,7 +606,6 @@ async function rpc(method, ...params){
     };
     window.parent.postMessage(msg, origin)
     return await new Promise((resolve, reject) => {
-        rpcHandlers[msg.id + '$'] = [method, params]
         rpcHandlers[msg.id] = [ resolve, reject ]
     })
 }
@@ -628,7 +627,6 @@ window.addEventListener("message", function(event){
         let data = event.data;
         if(data.id in rpcHandlers){
             let [resolve, reject] = rpcHandlers[data.id];
-            console.log(data, rpcHandlers[data.id + '$'])
 
             if(data.error){
                 reject(data.error)
@@ -950,7 +948,7 @@ function TokenBody(){
         </p>, <p>
             Transfer <b> {d(BN(state.tokenMethodParams._value).sub(BN(state.tokenBalance)))} {state.tokenSymbol} </b>
             to your <a target="_blank" href={location.origin + location.pathname + "?chain=" + chain.slug}><b>HyperMask wallet</b></a> and try again. 
-            You may be able to purchase through a token exchange such as <a href="https://forkdelta.github.io/" target="_blank"><b>ForkDelta</b></a>.
+            You may be able to purchase through a token exchange such as <a href="https://forkdelta.app/" target="_blank"><b>ForkDelta</b></a>.
         </p>]: [<p>
             You have enough <b>{state.tokenName}</b> to complete this transaction with 
             <b> {d(BN(state.tokenBalance).sub(BN(state.tokenMethodParams._value)))} {state.tokenSymbol} </b> 
